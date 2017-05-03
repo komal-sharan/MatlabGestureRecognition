@@ -1,6 +1,6 @@
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%creatinggraphs from raw data for each
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%gesture and mote%%%%%%%%%%%%%%%%%%%%%%
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%creatinggraphs from raw data for each
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%gesture and mote%%%%%%%%%%%%%%%%%%%%%%
 forplotsender0(:,:)=0;
 forplotsender1(:,:)=0;
 forplotsendertest(:,:)=0;
@@ -24,7 +24,7 @@ forfid=sprintf('/Users/komalsharan/Desktop/BigData/data/%s/%s',string(gesturelis
 fid=fopen(forfid);
 gesture=strsplit(fnames(K).name,'_') ;
 gesturelabel=gesture(1);
-disp(gesturelabel);
+
 mote=gesture(3);
 mote=char(mote);
 mote=strsplit(mote,'B');
@@ -44,10 +44,10 @@ sampleid1=1
 count=0
 [row,column]=size(tmp);
 i=4;
-disp(row);
-% popluting array containing the intensity values sampleid by sampleid for
-% the graph
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% % popluting array containing the intensity values sampleid by sampleid for
+% % the graph
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 while i<row-2
  
        j=i-2;
@@ -68,7 +68,7 @@ while i<row-2
      i=i+4;    
    
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fclose(fid);
 end
@@ -95,52 +95,90 @@ hold on;
 end
 
 title(gesturelabel)
-end
 
 
-
-
-
-
-for eventname=1:1
-eventfilen=sprintf('/Users/komalsharan/Desktop/BigData/event /%s/%s',string(gesturelist(eventname)),'*.event');
+eventfilen=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(gesturename)),'*.event');
 %hardcodedname='circle_tt.event';
 
 fnames = dir(eventfilen);
+
 numfids = length(fnames);
 vals = cell(1,numfids);
-% for K = 1:numfids
+for K = 1:numfids
 disp("imhere");
-% forfidevent=sprintf('/Users/komalsharan/Desktop/BigData/event /%s/%s',string(gesturelist(eventname)),fnames(K).name);
-fid=fopen(hardcodedname); 
+forfidevent=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(eventname)),fnames(K).name);
+fid=fopen(forfidevent); 
 
-[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14]=textread(hardcodedname,'%s %s %s %s %s %s %s %s %s %s %s %s %s %s');
-A(:,:,:,:,:,:,:,:,:,:,:,:,:)=[str2double(str(m1)),str2double(str(m2)),str2double(str(m3)),str2double(str(m4)),str2double(str(m5)),str2double(str(m6)),str2double(str(m7)),str2double(str(m8)),str2double(str(m9)),str2double(str(m10)),str2double(str(m11)),str2double(str(m12)),str2double(str(m13)),str2double(str(m14))]
-disp(A)
-x=cell2str(str2double(A(1,1)));
+
+[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14]=textread(forfidevent,'%s %s %s %s %s %s %s %s %s %s %s %s %s %s');
+windowcolumn(:)=0;
+
+
+lengthoffirst=size(m2);
+k=1;
+
+for i=2:lengthoffirst
+  windowcolumn(k)=str2double(char(m2(i)))
+  k=k+1;
+end
+
+
+windowingforsender1(:,:)=0;
+windowingforsender2(:,:)=0;
 windownum=1;
-values=1
-j=1
-for i=1:13
-    while j<41
-        windownum=windownum+1
-        start=A(j,i)/4 +4
-        ends=A(j+1,i)/4 +4
-     for sample=start:ends
-       windowing(windownum,values)=forplotsender0(str2double(mote),sample) 
-       disp(windowing)
-       values=values+1
-     end
-    end
-end
-  
-% end
+values=1;
 
+
+  for j=1:41
+     windownum=windownum+1;
+     start=windowcolumn(j)/4 +4;
+     ends=windowcolumn(j+1)/4 +4;
+    
+     for sample=start:ends
+      windowingforsender1(j,values)=forplotsender0(1,sample); 
+      values=values+1;
+     end
+  end
+
+values=1;
+
+
+
+
+% figure
+% %Plot something
+% plot(1:10)
+% % Add lines
+% h1 = line([2 2],[1 10]);
+% h2 = line([5 5],[1 10]);
+% % Set properties of lines
+% set([h1 h2],'Color','k','LineWidth',2)
+% % Add a patch
+% patch([2 5 5 2],[1 1 10 10],'r')
+% % The order of the "children" of the plot determines which one appears on top.
+% % I need to flip it here.
+% set(gca,'children',flipud(get(gca,'children')))
+% 
+
+  for l=1:41
+     windownum=windownum+1;
+     start=windowcolumn(l)/4 +4;
+     ends=windowcolumn(l+1)/4 +4;
+     for sample=start:ends
+     windowingforsender2(l,values)=forplotsender1(1,sample); 
+     values=values+1
+     end
+  end
+
+   
+  
 end
+ 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%windowingends%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         
+
+end
 % 
 % 
 % 
