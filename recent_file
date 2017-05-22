@@ -1,0 +1,225 @@
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%creatinggraphs from raw data for each
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%gesture and mote%%%%%%%%%%%%%%%%%%%%%%
+forplotsender0(:,:)=0;
+forplotsender1(:,:)=0;
+forplotsendertest(:,:)=0;
+featurearray(:,:)=0;
+
+
+gesturelist={"circle","void"}
+j=1
+windowing(:,:)=0;
+
+
+for gesturename=1:2
+  
+filen=sprintf('/Users/komalsharan/Desktop/BigData/data/%s/%s',string(gesturelist(gesturename)),'*.log');
+fnames = dir(filen);
+numfids = length(fnames);
+vals = cell(1,numfids);
+
+for K = 1:numfids
+    
+% opening a file and extracting gesture name and mote number from its name
+forfid=sprintf('/Users/komalsharan/Desktop/BigData/data/%s/%s',string(gesturelist(gesturename)),fnames(K).name);
+fid=fopen(forfid);
+gesture=strsplit(fnames(K).name,'_') ;
+gesturelabel=gesture(1);
+
+mote=gesture(3);
+mote=char(mote);
+mote=strsplit(mote,'B');
+mote=char(mote(2));
+mote=strsplit(mote,'.');
+mote=mote(1);
+
+
+
+% reading byte by byte from the binary file
+data=fread(fid,Inf,'int16');
+tmp=uint16(data);
+
+sampleid=1
+sampleid0=1
+sampleid1=1
+count=0
+[row,column]=size(tmp);
+i=4;
+
+% % popluting array containing the intensity values sampleid by sampleid for
+% % the graph
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+while i<row-2
+ 
+       j=i-2;
+       A=typecast(tmp(j),'uint8');
+       
+       if A(2) == 1
+           
+         forplotsender0(str2double(char(mote)),sampleid0)=swapbytes(uint16(tmp(i))); 
+         
+         sampleid0=sampleid0+1;
+       end
+       
+       if A(2) == 2
+         forplotsender1(str2double(char(mote)),sampleid1)=swapbytes((tmp(i))); 
+         
+         sampleid1=sampleid1+1;
+       end   
+     i=i+4;    
+   
+end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fclose(fid);
+end
+[rows_0,columns_0]=size(forplotsender0);
+[rows_1,columns_1]=size(forplotsender1);
+figure;
+%x=[8 8];
+%y=[start 1000];
+%plot(x,y);
+
+figure
+subplot(2,1,1)
+for i=1:13
+
+plot(1:columns_0, forplotsender0(i,:));
+
+hold on;
+
+end
+title(gesturelabel)
+
+subplot(2,1,2) 
+for i=1:13 
+plot(1:columns_1, forplotsender1(i,:));
+hold on;
+
+end
+
+title(gesturelabel)
+
+
+eventfilen=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(gesturename)),'*.event');
+%hardcodedname='circle_tt.event';
+
+fnames = dir(eventfilen);
+
+numfids = length(fnames);
+vals = cell(1,numfids);
+for K = 1:numfids
+
+forfidevent=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(gesturename)),fnames(K).name);
+fid=fopen(forfidevent); 
+
+
+[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14]=textread(forfidevent,'%s %s %s %s %s %s %s %s %s %s %s %s %s %s');
+windowcolumn(:)=0;
+
+
+lengthoffirst=size(m2);
+k=1;
+
+for i=2:lengthoffirst
+  windowcolumn(k)=str2double(char(m2(i)))
+  k=k+1;
+end
+
+
+windowingforsender1(:,:)=0;
+windowingforsender2(:,:)=0;
+windownum=1;
+values=1;
+windowdata(:,:)=0
+j=1
+
+  while j<40
+   
+     
+     start=int64(windowcolumn(j)/4) +4;            
+     
+     
+     
+     ends=int64(windowcolumn(j+1)/4) +4;
+      
+    
+     [row,column]=size(forplotsender0);
+     
+     for sample=start:ends
+      
+      if sample<column
+          
+       windowingforsender1(windownum,values)=forplotsender0(1,sample);
+       
+       %windowingforsender2(windownum,values)=forplotsender1(1,sample);
+       values=values+1;
+  
+      end
+     end
+     windownum=windownum+1;
+     values=1
+     j=j+2
+     
+  end
+  
+  
+  
+ 
+
+% 
+% 
+% 
+
+
+
+
+
+   
+  
+end
+
+
+[row,column]=size(windowingforsender1);
+[row1,column1]=size(windowingforsender2);
+
+for i=1:row
+    clear mean
+    clear var
+    clear std
+    A=windowingforsender1(i,:);
+    mean1=mean(windowingforsender1(i,:));
+    var1=var(windowingforsender1(i,:));
+    Hpsd1 = bandpower(windowingforsender1(i,:));
+    stdw=std(windowingforsender1(i,:));
+    featurearray(j,1)=mean1;
+    featurearray(j,2)=var1;
+    featurearray(j,3)=Hpsd1;
+    featurearray(j,4)=stdw;
+    j=j+1
+end
+    
+% for i=1:row1
+%     mean=mean(windowingforsender2(i));
+%     var=var(windowingforsender1(i));
+%     Hpsd = dspdata.psd(windowingforsender1(i)).data;
+%     stdw=std(windowingforsender1(i));
+%     featurearray(j,1)=mean;
+%     featurearray(j,2)=var;
+%     featurearray(j,3)=Hpsd;
+%     featurearray(j,4)=stdw;
+%     j=j+1
+% end
+
+
+
+
+
+end
+
+Mdl = fitcsvm(featurearray,[1,2]);
+
+
+
+
