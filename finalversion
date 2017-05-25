@@ -1,0 +1,294 @@
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%creatinggraphs from raw data for each
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%gesture and mote%%%%%%%%%%%%%%%%%%%%%%
+forplotsender0(:,:)=0;
+forplotsender1(:,:)=0;
+forplotsendertest(:,:)=0;
+featurearray(:,:)=0;
+newindow(:,:)=0;
+
+labelarray=[];
+
+windowingforsender1(:,:)=0;
+windowingforsender2(:,:)=0;
+
+windownum=1;
+globali=1;
+gesturelist={"circle","kick"}
+j=1
+windowing(:,:)=0;
+
+
+for gesturename=1:2
+forplotsender0(:,:)=0;
+forplotsender1(:,:)=0;
+forplotsendertest(:,:)=0;
+featurearray(:,:)=0;
+
+ gesturelabel=string(gesturelist(gesturename)) ;
+filen=sprintf('/Users/komalsharan/Desktop/Projectbig/data/%s/%s',string(gesturelist(gesturename)),'*.log');
+
+fnames = dir(filen);
+numfids = length(fnames);
+vals = cell(1,numfids);
+
+for K = 1:numfids
+    
+% opening a file and extracting gesture name and mote number from its name
+forfid=sprintf('/Users/komalsharan/Desktop/Projectbig/data/%s/%s',string(gesturelist(gesturename)),fnames(K).name);
+fid=fopen(forfid);
+gesture=strsplit(fnames(K).name,'_') ;
+
+
+mote=gesture(3);
+mote=char(mote);
+mote=strsplit(mote,'B');
+mote=char(mote(2));
+mote=strsplit(mote,'.');
+mote=mote(1);
+
+
+
+% reading byte by byte from the binary file
+data=fread(fid,Inf,'int16');
+tmp=uint16(data);
+
+sampleid=1
+sampleid0=1
+sampleid1=1
+count=0
+[row,column]=size(tmp);
+i=4;
+
+% % popluting array containing the intensity values sampleid by sampleid for
+% % the graph
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+while i<row-2
+ 
+       j=i-2;
+       A=typecast(tmp(j),'uint8');
+       
+       if A(2) == 1
+           
+         forplotsender0(str2double(char(mote)),sampleid0)=swapbytes(uint16(tmp(i))); 
+         
+         sampleid0=sampleid0+1;
+       end
+       
+       if A(2) == 2
+         forplotsender1(str2double(char(mote)),sampleid1)=swapbytes((tmp(i))); 
+         
+         sampleid1=sampleid1+1;
+       end   
+     i=i+4;    
+   
+end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fclose(fid);
+end
+[rows_0,columns_0]=size(forplotsender0);
+[rows_1,columns_1]=size(forplotsender1);
+
+%x=[8 8];
+%y=[start 1000];
+%plot(x,y);
+
+figure
+subplot(2,1,1)
+for i=1:13
+
+plot(1:columns_0, forplotsender0(i,:));
+
+hold on;
+
+end
+title(gesturelabel)
+
+subplot(2,1,2) 
+for i=1:13 
+plot(1:columns_1, forplotsender1(i,:));
+hold on;
+
+end
+
+title(gesturelabel)
+
+
+eventfilen=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(gesturename)),'*.event');
+
+
+fnames = dir(eventfilen);
+
+numfids = length(fnames);
+vals = cell(1,numfids);
+for K = 1:numfids
+
+forfidevent=sprintf('/Users/komalsharan/Desktop/Projectbig/data/event/%s/%s',string(gesturelist(gesturename)),fnames(K).name);
+fid=fopen(forfidevent); 
+
+
+[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14]=textread(forfidevent,'%s %s %s %s %s %s %s %s %s %s %s %s %s %s');
+windowcolumn(:)=0;
+
+
+lengthoffirst=size(m2);
+k=1;
+
+for i=2:lengthoffirst
+  windowcolumn(k)=str2double(char(m2(i)))
+  k=k+1;
+end
+
+
+
+values=1;
+windowdata(:,:)=0
+j=1
+f=0;
+
+  while j<40
+   
+     
+     start=int64(windowcolumn(j)/8) +4;            
+     
+     
+     
+     ends=int64(windowcolumn(j+1)/8) +4;
+      
+    
+     [row,column]=size(forplotsender0);
+     
+     for sample=start:ends
+      
+      if sample<column
+          
+       windowingforsender1(windownum,values)=forplotsender0(1,sample);
+       
+       f=1;
+%        windowingforsender2(windownum,values)=forplotsender1(1,sample);
+       values=values+1;
+  
+      end
+      
+     end
+   
+     
+     
+     if f
+     f=0;
+     labelarray(windownum,1)=gesturename;
+     windownum=windownum+1;
+     end
+     values=1
+     j=j+2
+     
+  end
+  
+end
+
+
+
+
+
+end
+
+[row,column]=size(windowingforsender1);
+[ross,colums]=size(labelarray);
+
+h=ross;
+
+% while h<=77
+% labelarray(h,1)=0; 
+% h=h+1;                                                                                                                                                                                                                                                                                                                                                                     
+% end
+
+
+
+% for i=1:row
+%     clear mean
+%     clear var
+%     clear std
+%     A=windowingforsender1(i,:);
+%     mean1=mean(windowingforsender1(i,:));
+%     var1=var(windowingforsender1(i,:));
+%     Hpsd1 = bandpower(windowingforsender1(i,:));
+%     stdw=std(windowingforsender1(i,:));
+%     featurearray(j,1)=mean1;
+%     featurearray(j,2)=var1;
+%     featurearray(j,3)=Hpsd1;
+%     featurearray(j,4)=stdw;
+%     j=j+1
+% end
+    
+%% snippet for Learning
+[rowp,columnp]=size(windowingforsender1);
+for t=1:rowp-1
+    for r=1:columnp
+    newindow(t,r)=windowingforsender1(t,r)
+    end
+end
+feature_mean = mean(newindow, 2);
+feature_std = std(newindow, 0, 2);
+feature_var = var(newindow, 0, 2);
+feature_power = bandpower(newindow')';
+
+features = 4;
+temp = [feature_mean feature_std feature_var feature_power labelarray];
+indices = randperm(size(temp,1), size(temp,1));
+featurearray = temp(indices, :);
+
+TrainData = featurearray(1:40, 1:features);
+Trainlabel = featurearray(1:40, features+1);
+
+TestData = featurearray(41:57, 1:features);
+Testlabel = featurearray(41:57, features+1);
+
+
+Mdl = fitcsvm(TrainData, Trainlabel);
+Predictedlabel = predict(Mdl, TestData);
+
+figure;
+plot(1:size(Testlabel,1),Testlabel,':*'); ylim([-1 2]);
+
+figure;
+plot(1:size(Predictedlabel,1),Predictedlabel, ':*'); ylim([-1 2]);
+
+figure;
+plot(1:size(Testlabel,1),Testlabel,':*'); ylim([-1 2]);
+hold on;
+plot(1:size(Predictedlabel,1),Predictedlabel, ':*'); ylim([-1 2]);
+
+
+%% 
+
+
+
+
+
+
+% label = predict(Mdl,featurearray)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
